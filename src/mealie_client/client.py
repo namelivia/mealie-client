@@ -39,7 +39,7 @@ from .endpoints.users import UsersManager
 class MealieClient:
     """
     Main client for interacting with the Mealie API.
-    
+
     This class provides a high-level interface for all Mealie API operations,
     including recipes, meal planning, shopping lists, and user management.
     """
@@ -78,7 +78,7 @@ class MealieClient:
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        
+
         # Set up user agent
         if user_agent is None:
             user_agent = "mealie-sdk/0.1.0"
@@ -115,7 +115,7 @@ class MealieClient:
 
         Environment variables:
         - MEALIE_USERNAME: Username for authentication
-        - MEALIE_PASSWORD: Password for authentication  
+        - MEALIE_PASSWORD: Password for authentication
         - MEALIE_API_TOKEN: API token for authentication
 
         Args:
@@ -149,7 +149,7 @@ class MealieClient:
     async def start_session(self) -> None:
         """
         Start the HTTP session and initialize the client.
-        
+
         This method must be called before making any API requests.
         """
         if self._session_started:
@@ -208,16 +208,13 @@ class MealieClient:
 
     async def _initialize_endpoints(self) -> None:
         """Initialize API endpoint managers."""
-        # Import endpoint managers
-        from .endpoints.recipes import RecipesManager
-        from .endpoints.users import UsersManager
+        from .endpoints.categories import CategoriesManager
         from .endpoints.groups import GroupsManager
         from .endpoints.meal_plans import MealPlansManager
+        from .endpoints.recipes import RecipesManager
         from .endpoints.shopping_lists import ShoppingListsManager
-        from .endpoints.foods import FoodsManager
-        from .endpoints.units import UnitsManager
-        from .endpoints.households import HouseholdsManager
-        from .endpoints.labels import LabelsManager
+        from .endpoints.users import UsersManager
+
         # Initialize endpoint managers
         self.recipes = RecipesManager(self)
         self.users = UsersManager(self)
@@ -228,6 +225,8 @@ class MealieClient:
         self.units = UnitsManager(self)
         self.households = HouseholdsManager(self)
         self.labels = LabelsManager(self)
+        self.categories = CategoriesManager(self)
+
     async def request(
         self,
         method: str,
@@ -270,7 +269,7 @@ class MealieClient:
 
         # Prepare headers
         request_headers = headers.copy() if headers else {}
-        
+
         # Add authentication headers if required
         if authenticated:
             auth_headers = await self.auth.get_auth_headers()
@@ -305,39 +304,53 @@ class MealieClient:
                 response = await self._http_client.request(**request_kwargs)
                 return await self._handle_response(response, request_id)
 
+            except (
+                AuthenticationError,
+                AuthorizationError,
+                ValidationError,
+                NotFoundError,
+                MealieAPIError,
+            ) as e:
+                # Don't retry on client errors (4xx status codes)
+                if (
+                    hasattr(e, "status_code")
+                    and e.status_code is not None
+                    and 400 <= e.status_code < 500
+                ):
+                    raise
+                last_exception = e
+
             except Exception as e:
                 last_exception = e
-                
-                # Don't retry on client errors (4xx status codes)
-                from .exceptions import MealieAPIError
-                if isinstance(e, (AuthenticationError, AuthorizationError, ValidationError, NotFoundError, MealieAPIError)):
-                    # Check if it's a client error (4xx)
-                    if hasattr(e, 'status_code') and e.status_code is not None and 400 <= e.status_code < 500:
-                        raise
-                
+
                 # Don't retry on the last attempt
                 if attempt == self.max_retries:
                     break
 
                 # Wait before retrying
-                await asyncio.sleep(self.retry_delay * (2 ** attempt))
+                await asyncio.sleep(self.retry_delay * (2**attempt))
 
         # Handle final failure
-        if last_exception is not None and isinstance(last_exception, MealieAPIError)  and getattr(last_exception, 'status_code', None) is not None and getattr(last_exception, 'status_code') >= 400:
+        if (
+            last_exception is not None
+            and isinstance(last_exception, MealieAPIError)
+            and getattr(last_exception, "status_code", None) is not None
+            and getattr(last_exception, "status_code") >= 400
+        ):
             raise last_exception
         else:
             # Check for specific exception types
             try:
                 import httpx
+
                 if isinstance(last_exception, httpx.TimeoutException):
-                    from .exceptions import TimeoutError as MealieTimeoutError
-                    raise MealieTimeoutError(
+                    raise TimeoutError(
                         f"Request timed out after {self.max_retries + 1} attempts",
                         timeout_duration=self.timeout,
                     )
             except ImportError:
                 pass
-            
+
             raise ConnectionError(
                 f"Request failed after {self.max_retries + 1} attempts",
                 original_error=last_exception,
@@ -366,6 +379,7 @@ class MealieClient:
                 except (json.JSONDecodeError, ValueError) as e:
                     # If JSON parsing fails for JSON content type, raise error
                     from .exceptions import MealieAPIError
+
                     raise MealieAPIError(
                         f"Failed to parse JSON response: {str(e)}",
                         status_code=response.status_code,
@@ -447,7 +461,7 @@ class MealieClient:
     async def login(self) -> None:
         """
         Perform login (only needed for username/password authentication).
-        
+
         For API token authentication, this is a no-op.
         """
         await self.auth.login()
@@ -494,4 +508,4 @@ class MealieClient:
             "user_agent": self.user_agent,
             "connected": self.is_connected(),
             "auth_info": self.get_auth_info(),
-        } 
+        }

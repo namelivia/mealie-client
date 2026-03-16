@@ -17,6 +17,7 @@ from mealie_client.models.shopping_list import (
 )
 from mealie_client.models.food import FoodCreateRequest, FoodUpdateRequest
 from mealie_client.models.unit import UnitCreateRequest, UnitUpdateRequest
+from mealie_client.models.category import CategoryCreateRequest, CategoryUpdateRequest
 
 
 class SDKTester:
@@ -57,6 +58,7 @@ class SDKTester:
             await self.test_shopping_lists_crud(client)
             await self.test_foods_crud(client)
             await self.test_units_crud(client)
+            await self.test_categories_crud(client)
 
             # Read-only or safe tests
             await self.test_users(client)
@@ -182,6 +184,37 @@ class SDKTester:
             if unit_id:
                 try:
                     await client.units.delete(unit_id)
+                    self.log(manager, "delete (Cleanup)", "✅ SUCCESS")
+                except Exception as cleanup_err:
+                    self.log(manager, "delete (Cleanup)", "❌ FAILED", str(cleanup_err))
+
+    async def test_categories_crud(self, client):
+        manager = "Categories"
+        cat_id = None
+        try:
+            # Create
+            new_cat = await client.categories.create(
+                CategoryCreateRequest(name="SDK CRUD Test Category")
+            )
+            cat_id = new_cat.id
+            self.log(manager, "create", "✅ SUCCESS", f"ID: {cat_id}")
+
+            # Update
+            updated = await client.categories.update(
+                cat_id, CategoryUpdateRequest(name="SDK CRUD Updated Category")
+            )
+            self.log(manager, "update", "✅ SUCCESS", f"New name: {updated.name}")
+
+            # Get
+            cat = await client.categories.get(cat_id)
+            self.log(manager, "get", "✅ SUCCESS", f"Name: {cat.name}")
+
+        except Exception as e:
+            self.log(manager, "CRUD Operations", "❌ FAILED", str(e))
+        finally:
+            if cat_id:
+                try:
+                    await client.categories.delete(cat_id)
                     self.log(manager, "delete (Cleanup)", "✅ SUCCESS")
                 except Exception as cleanup_err:
                     self.log(manager, "delete (Cleanup)", "❌ FAILED", str(cleanup_err))
