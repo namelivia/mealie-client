@@ -5,7 +5,7 @@ This module provides comprehensive recipe management functionality including
 CRUD operations, searching, filtering, and recipe-specific features.
 """
 
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from mealie_client.models.common import OrderDirection, OrderByNullPosition
 
@@ -25,7 +25,7 @@ from ..utils import clean_dict
 class RecipesManager:
     """
     Manages recipe-related API operations.
-    
+
     Provides methods for creating, reading, updating, and deleting recipes,
     as well as advanced features like recipe import, export, and image management.
     """
@@ -105,7 +105,7 @@ class RecipesManager:
         )
 
         response = await self.client.get("recipes", params=recipe_filter.to_params())
-        
+
         if isinstance(response, dict) and "items" in response:
             recipes_data = response["items"]
         elif isinstance(response, list):
@@ -114,7 +114,9 @@ class RecipesManager:
             recipes_data = []
 
         return [
-            RecipeSummary.from_dict(recipe_data) if isinstance(recipe_data, dict) else recipe_data
+            RecipeSummary.from_dict(recipe_data)
+            if isinstance(recipe_data, dict)
+            else recipe_data
             for recipe_data in recipes_data
         ]
 
@@ -136,10 +138,10 @@ class RecipesManager:
             response = await self.client.get(f"recipes/{recipe_id_or_slug}")
             if not isinstance(response, dict):
                 raise ValueError("Response must be a dictionary")
-            
+
             return Recipe.from_dict(response)
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Recipe '{recipe_id_or_slug}' not found",
                     resource_type="recipe",
@@ -152,30 +154,23 @@ class RecipesManager:
         Create a new recipe.
 
         Args:
-            recipe_data: Recipe creation data
+            recipe_data: Recipe creation parameters
 
         Returns:
             Created recipe object
 
         Raises:
-            ValidationError: If recipe data is invalid
             MealieAPIError: If the API request fails
         """
-        if isinstance(recipe_data, RecipeCreateRequest):
+        if hasattr(recipe_data, "to_dict"):
             data = recipe_data.to_dict()
         else:
-            data = recipe_data
+            data = cast(Dict[str, Any], recipe_data)
 
-        response = await self.client.post("recipes", json_data=data)
-        
-        # Handle different response types
+        response = await self.client.post("recipes", json_data=clean_dict(data))
         if isinstance(response, dict):
             return Recipe.from_dict(response)
-        elif isinstance(response, str):
-            # If response is a string (possibly recipe ID), create minimal Recipe object
-            return Recipe(id=response, name=data.get('name', ''), slug=data.get('slug', ''))
         else:
-            # For other response types, try to convert to Recipe
             return response
 
     async def update(
@@ -198,25 +193,29 @@ class RecipesManager:
             ValidationError: If recipe data is invalid
             MealieAPIError: If the API request fails
         """
-        if isinstance(recipe_data, RecipeUpdateRequest):
+        if hasattr(recipe_data, "to_dict"):
             data = recipe_data.to_dict()
         else:
-            data = recipe_data
+            data = cast(Dict[str, Any], recipe_data)
 
         try:
-            response = await self.client.patch(f"recipes/{recipe_id_or_slug}", json_data=clean_dict(data))
-            
+            response = await self.client.patch(
+                f"recipes/{recipe_id_or_slug}", json_data=clean_dict(data)
+            )
+
             # Handle different response types
             if isinstance(response, dict):
                 return Recipe.from_dict(response)
             elif isinstance(response, str):
                 # If response is a string (possibly recipe ID), create minimal Recipe object
-                return Recipe(id=response, name=data.get('name', ''), slug=data.get('slug', ''))
+                return Recipe(
+                    id=response, name=data.get("name", ""), slug=data.get("slug", "")
+                )
             else:
                 # For other response types, try to convert to Recipe
                 return response
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Recipe '{recipe_id_or_slug}' not found",
                     resource_type="recipe",
@@ -242,7 +241,7 @@ class RecipesManager:
             await self.client.delete(f"recipes/{recipe_id_or_slug}")
             return True
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Recipe '{recipe_id_or_slug}' not found",
                     resource_type="recipe",
@@ -266,14 +265,14 @@ class RecipesManager:
             MealieAPIError: If the API request fails
         """
         import_request = RecipeParseRequest(url=url, include_tags=include_tags)
-        
+
         response = await self.client.post(
-            "recipes/create/url",
-            json_data=import_request.to_dict()
+            "recipes/create/url", json_data=import_request.to_dict()
         )
         return response if isinstance(response, str) else response.get("slug", "")
 
-    async def get_suggestions(self,
+    async def get_suggestions(
+        self,
         limit: int = 1,
         tools: Optional[List[str]] = None,
         foods: Optional[List[str]] = None,
@@ -306,21 +305,24 @@ class RecipesManager:
         Returns:
             List of recipe summaries
         """
-        response = await self.client.get("recipes/suggestions", params=RecipeSuggestionsFilter(
-            limit=limit,
-            tools=tools,
-            foods=foods,
-            order_by=order_by,
-            order_direction=order_direction,
-            order_by_null_position=order_by_null_position,
-            max_missing_foods=max_missing_foods,
-            max_missing_tools=max_missing_tools,
-            include_foods_on_hand=include_foods_on_hand,
-            include_tools_on_hand=include_tools_on_hand,
-            accept_language=accept_language,
-            **kwargs,
-        ).to_params())
-        
+        response = await self.client.get(
+            "recipes/suggestions",
+            params=RecipeSuggestionsFilter(
+                limit=limit,
+                tools=tools,
+                foods=foods,
+                order_by=order_by,
+                order_direction=order_direction,
+                order_by_null_position=order_by_null_position,
+                max_missing_foods=max_missing_foods,
+                max_missing_tools=max_missing_tools,
+                include_foods_on_hand=include_foods_on_hand,
+                include_tools_on_hand=include_tools_on_hand,
+                accept_language=accept_language,
+                **kwargs,
+            ).to_params(),
+        )
+
         if isinstance(response, list):
             recipes_data = response
         elif isinstance(response, dict) and "items" in response:
@@ -329,6 +331,8 @@ class RecipesManager:
             recipes_data = [response] if response else []
 
         return [
-            RecipeSummary.from_dict(recipe_data) if isinstance(recipe_data, dict) else recipe_data
+            RecipeSummary.from_dict(recipe_data)
+            if isinstance(recipe_data, dict)
+            else recipe_data
             for recipe_data in recipes_data
-        ] 
+        ]

@@ -14,6 +14,7 @@ from ..models.meal_plan import (
 )
 from ..models.common import OrderDirection, OrderByNullPosition
 from ..exceptions import NotFoundError
+from ..utils import clean_dict
 
 
 class MealPlansManager:
@@ -55,7 +56,9 @@ class MealPlansManager:
             plans_data = []
 
         return [
-            MealPlanSummary.from_dict(plan_data) if isinstance(plan_data, dict) else plan_data
+            MealPlanSummary.from_dict(plan_data)
+            if isinstance(plan_data, dict)
+            else plan_data
             for plan_data in plans_data
         ]
 
@@ -101,7 +104,7 @@ class MealPlansManager:
 
         response = await self.client.post(
             "households/mealplans",
-            json_data=data,
+            json_data=clean_dict(data),
             params=MealPlanFilter(
                 accept_language=accept_language,
             ).to_params(),
@@ -122,10 +125,13 @@ class MealPlansManager:
 
         try:
             response = await self.client.put(
-                f"households/mealplans/{plan_id}", json_data={
-                    **data,
-                    "id": plan_id,
-                },
+                f"households/mealplans/{plan_id}",
+                json_data=clean_dict(
+                    {
+                        **data,
+                        "id": plan_id,
+                    }
+                ),
                 params=MealPlanFilter(
                     accept_language=accept_language,
                 ).to_params(),

@@ -7,7 +7,13 @@ This module contains data models for unit and unit management.
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from .common import BaseModel, OrderByNullPosition, convert_datetime, QueryFilter, OrderDirection
+from .common import (
+    BaseModel,
+    OrderByNullPosition,
+    convert_datetime,
+    QueryFilter,
+    OrderDirection,
+)
 
 
 class Unit(BaseModel):
@@ -50,7 +56,7 @@ class UnitCreateRequest(BaseModel):
     def __init__(
         self,
         name: str,
-        pluralName: str,
+        pluralName: Optional[str] = None,
         description: Optional[str] = None,
         extras: Optional[Dict[str, Any]] = None,
         fraction: bool = False,

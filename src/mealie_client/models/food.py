@@ -7,7 +7,13 @@ This module contains data models for food and food management.
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from .common import BaseModel, OrderByNullPosition, OrderDirection, QueryFilter, convert_datetime
+from .common import (
+    BaseModel,
+    OrderByNullPosition,
+    OrderDirection,
+    QueryFilter,
+    convert_datetime,
+)
 
 
 class Food(BaseModel):
@@ -48,7 +54,7 @@ class FoodCreateRequest(BaseModel):
     def __init__(
         self,
         name: str,
-        pluralName: str,
+        pluralName: Optional[str] = None,
         id: Optional[str] = None,
         description: Optional[str] = None,
         extras: Optional[Dict[str, Any]] = None,
@@ -122,7 +128,8 @@ class FoodSummary(BaseModel):
         self.label = label
         self.createdAt = convert_datetime(createdAt)
         self.updatedAt = convert_datetime(updatedAt)
-        super().__init__(**kwargs) 
+        super().__init__(**kwargs)
+
 
 class FoodFilter(QueryFilter):
     """Filter for food queries."""
@@ -145,6 +152,6 @@ class FoodFilter(QueryFilter):
             order_direction=order_direction,
             order_by_null_position=order_by_null_position,
             search=search,
-            accept_language=accept_language,    
+            accept_language=accept_language,
             **kwargs,
         )

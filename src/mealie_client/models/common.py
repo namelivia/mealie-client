@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 class BaseModel:
     """
     Base model class with common functionality.
-    
+
     This provides a simple base class for data models without external dependencies.
     In a full implementation, this could be replaced with Pydantic BaseModel.
     """
@@ -27,66 +27,70 @@ class BaseModel:
         """Convert the model to a dictionary."""
         result = {}
         for key, value in self.__dict__.items():
+            normalized_value = self.__normalize_value(value)
+            if normalized_value is None:
+                continue
+
             if key == "group_id":
-                result["groupId"] = self.__normalize_value(value)
+                result["groupId"] = normalized_value
             elif key == "user_id":
-                result["userId"] = self.__normalize_value(value)
+                result["userId"] = normalized_value
             elif key == "household_id":
-                result["householdId"] = self.__normalize_value(value)
+                result["householdId"] = normalized_value
             elif key == "entry_type":
-                result["entryType"] = self.__normalize_value(value)
+                result["entryType"] = normalized_value
             elif key == "recipe_id":
-                result["recipeId"] = self.__normalize_value(value)
+                result["recipeId"] = normalized_value
             elif key == "recipe_servings":
-                result["recipeServings"] = self.__normalize_value(value)
+                result["recipeServings"] = normalized_value
             elif key == "recipe_yield":
-                result["recipeYield"] = self.__normalize_value(value)
+                result["recipeYield"] = normalized_value
             elif key == "recipe_yield_quantity":
-                result["recipeYieldQuantity"] = self.__normalize_value(value)
+                result["recipeYieldQuantity"] = normalized_value
             elif key == "recipe_category":
-                result["recipeCategory"] = self.__normalize_value(value)
+                result["recipeCategory"] = normalized_value
             elif key == "total_time":
-                result["totalTime"] = self.__normalize_value(value)
+                result["totalTime"] = normalized_value
             elif key == "prep_time":
-                result["prepTime"] = self.__normalize_value(value)
+                result["prepTime"] = normalized_value
             elif key == "cook_time":
-                result["cookTime"] = self.__normalize_value(value)
+                result["cookTime"] = normalized_value
             elif key == "perform_time":
-                result["performTime"] = self.__normalize_value(value)
+                result["performTime"] = normalized_value
             elif key == "org_url":
-                result["orgURL"] = self.__normalize_value(value)
+                result["orgURL"] = normalized_value
             elif key == "date_added":
-                result["dateAdded"] = self.__normalize_value(value)
+                result["dateAdded"] = normalized_value
             elif key == "date_updated":
-                result["dateUpdated"] = self.__normalize_value(value)
+                result["dateUpdated"] = normalized_value
             elif key == "created_at":
-                result["created_at"] = self.__normalize_value(value)
-                result["createdAt"] = self.__normalize_value(value)
+                result["created_at"] = normalized_value
+                result["createdAt"] = normalized_value
             elif key == "updated_at":
-                result["updated_at"] = self.__normalize_value(value)
-                result["updatedAt"] = self.__normalize_value(value)
+                result["updated_at"] = normalized_value
+                result["updatedAt"] = normalized_value
             elif key == "last_made":
-                result["lastMade"] = self.__normalize_value(value)
+                result["lastMade"] = normalized_value
             elif key == "full_name":
-                result["fullName"] = self.__normalize_value(value)
+                result["fullName"] = normalized_value
             elif key == "auth_method":
-                result["authMethod"] = self.__normalize_value(value)
+                result["authMethod"] = normalized_value
             elif key == "can_invite":
-                result["canInvite"] = self.__normalize_value(value)
+                result["canInvite"] = normalized_value
             elif key == "can_manage":
-                result["canManage"] = self.__normalize_value(value)
+                result["canManage"] = normalized_value
             elif key == "can_organize":
-                result["canOrganize"] = self.__normalize_value(value)
+                result["canOrganize"] = normalized_value
             elif key == "can_manage_household":
-                result["canManageHousehold"] = self.__normalize_value(value)
+                result["canManageHousehold"] = normalized_value
             elif key == "group_slug":
-                result["groupSlug"] = self.__normalize_value(value)
+                result["groupSlug"] = normalized_value
             elif key == "household_slug":
-                result["householdSlug"] = self.__normalize_value(value)
+                result["householdSlug"] = normalized_value
             elif key == "cache_key":
-                result["cacheKey"] = self.__normalize_value(value)
+                result["cacheKey"] = normalized_value
             else:
-                result[key] = self.__normalize_value(value)
+                result[key] = normalized_value
         return result
 
     @classmethod
@@ -160,7 +164,7 @@ class BaseModel:
         if not isinstance(other, self.__class__):
             return False
         return self.__dict__ == other.__dict__
-    
+
     @classmethod
     def __normalize_value(cls, value):
         if isinstance(value, BaseModel):
@@ -176,22 +180,27 @@ class BaseModel:
         else:
             return value
 
+
 # Enums for various Mealie data types
+
 
 class RecipeVisibility(str, Enum):
     """Recipe visibility levels."""
+
     PUBLIC = "public"
     PRIVATE = "private"
 
 
 class UserRole(str, Enum):
     """User roles in the system."""
+
     ADMIN = "admin"
     USER = "user"
 
 
 class MealPlanType(str, Enum):
     """Types of meal plans."""
+
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
     DINNER = "dinner"
@@ -200,12 +209,14 @@ class MealPlanType(str, Enum):
 
 class ShoppingListItemStatus(str, Enum):
     """Status of shopping list items."""
+
     UNCHECKED = "unchecked"
     CHECKED = "checked"
 
 
 class RecipeScale(str, Enum):
     """Recipe scaling options."""
+
     HALF = "0.5"
     NORMAL = "1"
     DOUBLE = "2"
@@ -214,6 +225,7 @@ class RecipeScale(str, Enum):
 
 class TimeUnit(str, Enum):
     """Time units for durations."""
+
     MINUTES = "minutes"
     HOURS = "hours"
     DAYS = "days"
@@ -221,9 +233,10 @@ class TimeUnit(str, Enum):
 
 # Common data structures
 
+
 class Nutrition(BaseModel):
     """Nutritional information."""
-    
+
     def __init__(
         self,
         calories: Optional[float] = None,
@@ -247,7 +260,7 @@ class Nutrition(BaseModel):
 
 class RecipeIngredient(BaseModel):
     """Recipe ingredient with quantity and notes."""
-    
+
     def __init__(
         self,
         title: str,
@@ -271,7 +284,7 @@ class RecipeIngredient(BaseModel):
 
 class RecipeInstruction(BaseModel):
     """Recipe instruction step."""
-    
+
     def __init__(
         self,
         id: Optional[str] = None,
@@ -289,7 +302,7 @@ class RecipeInstruction(BaseModel):
 
 class RecipeAsset(BaseModel):
     """Recipe asset (image, file, etc.)."""
-    
+
     def __init__(
         self,
         name: str,
@@ -305,7 +318,7 @@ class RecipeAsset(BaseModel):
 
 class RecipeSettings(BaseModel):
     """Recipe settings and preferences."""
-    
+
     def __init__(
         self,
         public: bool = False,
@@ -329,7 +342,7 @@ class RecipeSettings(BaseModel):
 
 class RecipeCategory(BaseModel):
     """Recipe category."""
-    
+
     def __init__(
         self,
         id: Optional[str] = None,
@@ -345,7 +358,7 @@ class RecipeCategory(BaseModel):
 
 class RecipeTag(BaseModel):
     """Recipe tag."""
-    
+
     def __init__(
         self,
         id: Optional[str] = None,
@@ -361,7 +374,7 @@ class RecipeTag(BaseModel):
 
 class RecipeTool(BaseModel):
     """Recipe tool/equipment."""
-    
+
     def __init__(
         self,
         id: Optional[str] = None,
@@ -379,7 +392,7 @@ class RecipeTool(BaseModel):
 
 class PaginationInfo(BaseModel):
     """Pagination information for list responses."""
-    
+
     def __init__(
         self,
         page: int = 1,
@@ -397,18 +410,21 @@ class PaginationInfo(BaseModel):
 
 class OrderDirection(str, Enum):
     """Ordering direction for queries."""
+
     ASC = "asc"
     DESC = "desc"
 
 
 class OrderByNullPosition(str, Enum):
     """Position of null values in ordering."""
+
     FIRST = "first"
     LAST = "last"
 
+
 class QueryFilter(BaseModel):
     """Base query filter for API requests."""
-    
+
     def __init__(
         self,
         page: int = 1,
@@ -435,11 +451,11 @@ class QueryFilter(BaseModel):
             "page": self.page,
             "perPage": self.per_page,
         }
-        
+
         if self.order_by:
             params["orderBy"] = self.order_by
             params["orderDirection"] = self.order_direction.value
-            
+
         if self.order_by_null_position:
             params["orderByNullPosition"] = self.order_by_null_position.value
 
@@ -453,7 +469,7 @@ class QueryFilter(BaseModel):
 
 class DateRange(BaseModel):
     """Date range for filtering."""
-    
+
     def __init__(
         self,
         start_date: Optional[Union[date, datetime, str]] = None,
@@ -467,25 +483,25 @@ class DateRange(BaseModel):
     def to_params(self) -> Dict[str, str]:
         """Convert date range to query parameters."""
         params = {}
-        
+
         if self.start_date:
             if isinstance(self.start_date, (date, datetime)):
                 params["start_date"] = self.start_date.isoformat()
             else:
                 params["start_date"] = str(self.start_date)
-                
+
         if self.end_date:
             if isinstance(self.end_date, (date, datetime)):
                 params["end_date"] = self.end_date.isoformat()
             else:
                 params["end_date"] = str(self.end_date)
-                
+
         return params
 
 
 class APIResponse(BaseModel):
     """Generic API response wrapper."""
-    
+
     def __init__(
         self,
         data: Any = None,
@@ -503,7 +519,7 @@ class APIResponse(BaseModel):
 
 class ErrorDetail(BaseModel):
     """Error detail information."""
-    
+
     def __init__(
         self,
         field: str,
@@ -519,6 +535,7 @@ class ErrorDetail(BaseModel):
 
 # Utility functions for model handling
 
+
 def convert_datetime(value: Union[str, datetime, None]) -> Optional[datetime]:
     """Convert various datetime formats to datetime object."""
     if value is None:
@@ -528,7 +545,7 @@ def convert_datetime(value: Union[str, datetime, None]) -> Optional[datetime]:
     if isinstance(value, str):
         # Try to parse ISO format
         try:
-            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             # If parsing fails, return None
             return None
@@ -546,12 +563,12 @@ def convert_date(value: Union[str, date, datetime, None]) -> Optional[date]:
     if isinstance(value, str):
         # Try to parse ISO format
         try:
-            parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
             return parsed.date()
         except ValueError:
             # Try date-only format
             try:
-                return datetime.strptime(value, '%Y-%m-%d').date()
+                return datetime.strptime(value, "%Y-%m-%d").date()
             except ValueError:
                 return None
     return None
@@ -564,4 +581,4 @@ def safe_get(data: Dict[str, Any], key: str, default: Any = None) -> Any:
 
 def filter_none_values(data: Dict[str, Any]) -> Dict[str, Any]:
     """Filter out None values from a dictionary."""
-    return {k: v for k, v in data.items() if v is not None} 
+    return {k: v for k, v in data.items() if v is not None}

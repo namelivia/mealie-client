@@ -13,6 +13,7 @@ from ..models.shopping_list import (
     ShoppingListItemUpdateRequest,
 )
 from ..exceptions import NotFoundError
+from ..utils import clean_dict
 
 
 class ShoppingListsManager:
@@ -24,7 +25,7 @@ class ShoppingListsManager:
     async def get_all(self) -> List[ShoppingListSummary]:
         """Get all shopping lists."""
         response = await self.client.get("households/shopping/lists")
-        
+
         if isinstance(response, list):
             lists_data = response
         elif isinstance(response, dict) and "items" in response:
@@ -33,7 +34,9 @@ class ShoppingListsManager:
             lists_data = []
 
         return [
-            ShoppingListSummary.from_dict(list_data) if isinstance(list_data, dict) else list_data
+            ShoppingListSummary.from_dict(list_data)
+            if isinstance(list_data, dict)
+            else list_data
             for list_data in lists_data
         ]
 
@@ -41,9 +44,13 @@ class ShoppingListsManager:
         """Get a specific shopping list by ID."""
         try:
             response = await self.client.get(f"households/shopping/lists/{list_id}")
-            return ShoppingList.from_dict(response) if isinstance(response, dict) else response
+            return (
+                ShoppingList.from_dict(response)
+                if isinstance(response, dict)
+                else response
+            )
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Shopping list '{list_id}' not found",
                     resource_type="shopping_list",
@@ -51,15 +58,21 @@ class ShoppingListsManager:
                 )
             raise
 
-    async def create(self, list_data: Union[ShoppingListCreateRequest, Dict[str, Any]]) -> ShoppingList:
+    async def create(
+        self, list_data: Union[ShoppingListCreateRequest, Dict[str, Any]]
+    ) -> ShoppingList:
         """Create a new shopping list."""
         if isinstance(list_data, ShoppingListCreateRequest):
             data = list_data.to_dict()
         else:
             data = list_data
 
-        response = await self.client.post("households/shopping/lists", json_data=data)
-        return ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        response = await self.client.post(
+            "households/shopping/lists", json_data=clean_dict(data)
+        )
+        return (
+            ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        )
 
     async def update(
         self,
@@ -73,10 +86,16 @@ class ShoppingListsManager:
             data = list_data
 
         try:
-            response = await self.client.put(f"households/shopping/lists/{list_id}", json_data=data)
-            return ShoppingList.from_dict(response) if isinstance(response, dict) else response
+            response = await self.client.put(
+                f"households/shopping/lists/{list_id}", json_data=clean_dict(data)
+            )
+            return (
+                ShoppingList.from_dict(response)
+                if isinstance(response, dict)
+                else response
+            )
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Shopping list '{list_id}' not found",
                     resource_type="shopping_list",
@@ -90,7 +109,7 @@ class ShoppingListsManager:
             await self.client.delete(f"households/shopping/lists/{list_id}")
             return True
         except Exception as e:
-            if hasattr(e, 'status_code') and getattr(e, 'status_code') == 404:
+            if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
                 raise NotFoundError(
                     f"Shopping list '{list_id}' not found",
                     resource_type="shopping_list",
@@ -109,8 +128,12 @@ class ShoppingListsManager:
         else:
             data = item_data
 
-        response = await self.client.post(f"households/shopping/lists/{list_id}/items", json_data=data)
-        return ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        response = await self.client.post(
+            f"households/shopping/lists/{list_id}/items", json_data=clean_dict(data)
+        )
+        return (
+            ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        )
 
     async def update_item(
         self,
@@ -126,9 +149,11 @@ class ShoppingListsManager:
 
         response = await self.client.put(
             f"households/shopping/lists/{list_id}/items/{item_id}",
-            json_data=data
+            json_data=clean_dict(data),
         )
-        return ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        return (
+            ShoppingList.from_dict(response) if isinstance(response, dict) else response
+        )
 
     async def delete_item(self, list_id: str, item_id: str) -> bool:
         """Delete a shopping list item."""

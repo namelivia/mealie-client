@@ -14,6 +14,7 @@ from ..models.user import (
     UserSummary,
 )
 from ..exceptions import NotFoundError
+from ..utils import clean_dict
 
 
 class UsersManager:
@@ -80,7 +81,7 @@ class UsersManager:
         else:
             data = user_data
 
-        response = await self.client.post("admin/users", json_data=data)
+        response = await self.client.post("admin/users", json_data=clean_dict(data))
         return User.from_dict(response) if isinstance(response, dict) else response
 
     async def update(
@@ -95,7 +96,9 @@ class UsersManager:
             data = user_data
 
         try:
-            response = await self.client.put(f"admin/users/{user_id}", json_data=data)
+            response = await self.client.put(
+                f"admin/users/{user_id}", json_data=clean_dict(data)
+            )
             return User.from_dict(response) if isinstance(response, dict) else response
         except Exception as e:
             if hasattr(e, "status_code") and getattr(e, "status_code") == 404:
